@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronsUpDown, Upload, FileUp, Repeat } from 'lucide-react';
+import { ChevronsUpDown, Upload, FileUp, Repeat, ArrowLeft } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { SetSelector } from './components/SetSelector';
 import { Flashcard } from './components/Flashcard';
@@ -28,6 +28,7 @@ const App: React.FC = () => {
     const [isSetFinished, setIsSetFinished] = useState(false);
     const [sentences, setSentences] = useState<Map<string, string>>(new Map());
     const [sessionWords, setSessionWords] = useState<Word[]>([]);
+    const [history, setHistory] = useState<number[]>([]);
 
     const currentSet = loadedDictionary && selectedSetIndex !== null ? loadedDictionary.sets[selectedSetIndex] : null;
     const currentWord = sessionWords[currentWordIndex];
@@ -82,6 +83,7 @@ const App: React.FC = () => {
         setIsTraining(false);
         setIsSetFinished(false);
         setSessionWords([]);
+        setHistory([]);
     };
 
     const processWordFile = async (file: File): Promise<WordSet[]> => {
@@ -216,6 +218,21 @@ const App: React.FC = () => {
     };
 
     // --- User Actions ---
+    const handlePrevious = () => {
+      if (history.length === 0) return;
+
+      const newHistory = [...history];
+      const previousIndex = newHistory.pop();
+
+      if (previousIndex !== undefined) {
+        setHistory(newHistory);
+        setCurrentWordIndex(previousIndex);
+        setIsFlipped(false);
+        // Note: This does not undo the "know" or "don't know" status.
+        // It's purely for navigation.
+      }
+    };
+    
     const handleShuffle = () => {
       if (sessionWords.length < 2) return;
       
@@ -225,10 +242,12 @@ const App: React.FC = () => {
       setCurrentWordIndex(0);
       setIsFlipped(false);
       setIsSetFinished(false);
+      setHistory([]);
     };
 
     const handleKnow = () => {
         if (!currentWord) return;
+        setHistory(prev => [...prev, currentWordIndex]);
         setIsFlipped(false);
         setTimeout(() => {
           if (isTraining) {
@@ -248,6 +267,7 @@ const App: React.FC = () => {
 
     const handleDontKnow = () => {
       if (!currentWord) return;
+      setHistory(prev => [...prev, currentWordIndex]);
       setIsFlipped(false);
       setTimeout(() => {
         if (!isTraining) {
@@ -274,6 +294,7 @@ const App: React.FC = () => {
         setIsTraining(false);
         setSessionWords(shuffledWords);
         setUnknownWords(loadUnknownWords(sets, index, dictName));
+        setHistory([]);
     };
 
     const startTraining = () => {
@@ -286,6 +307,7 @@ const App: React.FC = () => {
       setIsTraining(true);
       setCurrentWordIndex(0);
       setIsSetFinished(false);
+      setHistory([]);
     };
 
     const handleReturnToSetSelection = () => {
@@ -424,16 +446,24 @@ const App: React.FC = () => {
                               </div>
                           </div>
   
-                          <div className="flex items-center gap-4 mt-6">
+                          <div className="flex items-center gap-4 mt-6 w-full max-w-md">
                              <button
+                                onClick={handlePrevious}
+                                disabled={history.length === 0}
+                                className="p-4 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                aria-label="Previous card"
+                              >
+                                <ArrowLeft size={24} />
+                              </button>
+                              <button
                                 onClick={handleDontKnow}
-                                className="px-6 py-3 bg-rose-800 hover:bg-rose-700 rounded-lg font-semibold transition-colors w-36 text-center"
+                                className="flex-1 px-6 py-3 bg-rose-800 hover:bg-rose-700 rounded-lg font-semibold transition-colors text-center"
                               >
                                 Don't know
                               </button>
                               <button
                                 onClick={handleKnow}
-                                className="px-6 py-3 bg-emerald-800 hover:bg-emerald-700 rounded-lg font-semibold transition-colors w-36 text-center"
+                                className="flex-1 px-6 py-3 bg-emerald-800 hover:bg-emerald-700 rounded-lg font-semibold transition-colors text-center"
                               >
                                 Know
                               </button>

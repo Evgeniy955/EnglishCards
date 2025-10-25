@@ -134,12 +134,12 @@ export const Flashcard: React.FC<FlashcardProps> = ({ word, isFlipped, onFlip, e
       <div className={`relative w-full h-full preserve-3d transition-transform duration-500 ${isFlipped ? 'rotate-y-180' : ''}`}>
         {/* Front Side */}
         <div className="absolute w-full h-full backface-hidden flex items-center justify-center p-6 bg-slate-800 rounded-2xl shadow-lg border border-slate-700">
-          <h2 className="text-4xl sm:text-5xl font-bold text-center text-slate-100 break-words">{word?.ru}</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-center text-slate-100 break-words break-all">{word?.ru}</h2>
         </div>
         {/* Back Side */}
         <div className="absolute w-full h-full backface-hidden rotate-y-180 flex flex-col items-center justify-center p-6 bg-indigo-700 rounded-2xl shadow-lg">
           <div className="flex items-center justify-center gap-3">
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white break-words">{word?.en}</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white break-words break-all">{word?.en}</h2>
             <button 
               onClick={handleSpeakWord} 
               disabled={isSpeakingWord || isSpeakingSentence}
