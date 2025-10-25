@@ -164,7 +164,7 @@ const App: React.FC = () => {
             if (wordSetsFromFile.length > 0) {
                 const newDictionary = { name, sets: wordSetsFromFile };
                 setLoadedDictionary(newDictionary);
-                // Directly select the first set using the new data to ensure UI consistency.
+                // Immediately and explicitly select the first set.
                 handleSelectSet(0, newDictionary.sets, newDictionary.name);
             } else {
                 alert("No valid words found. Ensure format is 'Russian - Empty Column - English'.");
@@ -221,7 +221,7 @@ const App: React.FC = () => {
               const updatedUnknown = unknownWords.filter(w => w.en !== currentWord.en || w.ru !== currentWord.ru);
               saveUnknownWords(updatedUnknown);
               setUnknownWords(updatedUnknown);
-              // Check if the last unknown word was just learned
+              // If the last unknown word was just learned, end the set.
               if (updatedUnknown.length === 0) {
                   setIsSetFinished(true);
               }
@@ -266,6 +266,13 @@ const App: React.FC = () => {
       setIsSetFinished(false);
     };
 
+    const handleReturnToSetSelection = () => {
+      setSelectedSetIndex(null); // Deselect the current set to show the selector
+      setIsSetFinished(false);   // Hide the finished screen
+      setCurrentWordIndex(0);    // Reset index
+      setIsTraining(false);      // Exit training mode if active
+    };
+
     // --- Render Logic ---
     const renderContent = () => {
       if (!loadedDictionary) {
@@ -305,7 +312,7 @@ const App: React.FC = () => {
                <>
                   <p className="text-emerald-400 mb-6">The words are finished. Well done! Please select a new set.</p>
                   <button
-                      onClick={() => setIsFileModalOpen(true)}
+                      onClick={handleReturnToSetSelection}
                       className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold transition-colors flex items-center gap-2 mx-auto"
                   >
                       Select New Set
@@ -316,6 +323,32 @@ const App: React.FC = () => {
         );
       }
   
+      // Main trainer view when no specific set is selected yet
+      if (selectedSetIndex === null) {
+        return (
+          <div className="w-full max-w-2xl">
+              <header className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                  <h1 className="text-2xl font-bold text-slate-200 text-center">{loadedDictionary.name}</h1>
+                  <button
+                      onClick={() => setIsFileModalOpen(true)}
+                      className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
+                  >
+                      <Upload size={16} /> Change Dictionary
+                  </button>
+              </header>
+              <main className="flex flex-col items-center">
+                <SetSelector
+                  sets={loadedDictionary.sets}
+                  selectedSetIndex={selectedSetIndex}
+                  onSelectSet={handleSelectSet}
+                />
+                <p className="text-slate-400">Please select a set to begin.</p>
+              </main>
+          </div>
+        );
+      }
+
+
       return (
           <div className="w-full max-w-2xl">
               <header className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
