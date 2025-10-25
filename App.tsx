@@ -7,6 +7,7 @@ import { ProgressBar } from './components/ProgressBar';
 import { WordList } from './components/WordList';
 import { SentenceUpload } from './components/SentenceUpload';
 import { FileSourceModal } from './components/FileSourceModal';
+import { InstructionsModal } from './components/InstructionsModal';
 import type { Word, WordSet, LoadedDictionary } from './types';
 
 const MAX_WORDS_PER_BLOCK = 30;
@@ -21,14 +22,15 @@ const App: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showWordList, setShowWordList] = useState(false);
     const [isFileModalOpen, setIsFileModalOpen] = useState(false);
+    const [isInstructionsModalOpen, setIsInstructionsModalOpen] = useState(false);
     const [unknownWords, setUnknownWords] = useState<Word[]>([]);
     const [isTraining, setIsTraining] = useState(false);
     const [isSetFinished, setIsSetFinished] = useState(false);
     const [sentences, setSentences] = useState<Map<string, string>>(new Map());
+    const [sessionWords, setSessionWords] = useState<Word[]>([]);
 
     const currentSet = loadedDictionary && selectedSetIndex !== null ? loadedDictionary.sets[selectedSetIndex] : null;
-    const wordsForCurrentMode = isTraining ? unknownWords : currentSet?.words || [];
-    const currentWord = wordsForCurrentMode[currentWordIndex];
+    const currentWord = sessionWords[currentWordIndex];
     
     // --- Effects ---
     // Auto-load default sentences on first launch
@@ -64,11 +66,11 @@ const App: React.FC = () => {
 
     // Check if the set is finished
     useEffect(() => {
-      const isFinished = currentWordIndex >= wordsForCurrentMode.length;
-      if (isFinished && wordsForCurrentMode.length > 0) {
+      const isFinished = currentWordIndex >= sessionWords.length;
+      if (isFinished && sessionWords.length > 0) {
         setIsSetFinished(true);
       }
-    }, [currentWordIndex, wordsForCurrentMode]);
+    }, [currentWordIndex, sessionWords]);
 
     // --- File & Data Handling ---
     const resetState = () => {
@@ -79,6 +81,7 @@ const App: React.FC = () => {
         setUnknownWords([]);
         setIsTraining(false);
         setIsSetFinished(false);
+        setSessionWords([]);
     };
 
     const processWordFile = async (file: File): Promise<WordSet[]> => {
@@ -213,6 +216,17 @@ const App: React.FC = () => {
     };
 
     // --- User Actions ---
+    const handleShuffle = () => {
+      if (sessionWords.length < 2) return;
+      
+      const shuffledWords = [...sessionWords].sort(() => Math.random() - 0.5);
+
+      setSessionWords(shuffledWords);
+      setCurrentWordIndex(0);
+      setIsFlipped(false);
+      setIsSetFinished(false);
+    };
+
     const handleKnow = () => {
         if (!currentWord) return;
         setIsFlipped(false);
@@ -221,7 +235,8 @@ const App: React.FC = () => {
               const updatedUnknown = unknownWords.filter(w => w.en !== currentWord.en || w.ru !== currentWord.ru);
               saveUnknownWords(updatedUnknown);
               setUnknownWords(updatedUnknown);
-              // If the last unknown word was just learned, end the set.
+              setSessionWords(prev => prev.filter(w => w.en !== currentWord.en || w.ru !== currentWord.ru));
+              
               if (updatedUnknown.length === 0) {
                   setIsSetFinished(true);
               }
@@ -249,18 +264,25 @@ const App: React.FC = () => {
 
     const handleSelectSet = (index: number, sets = loadedDictionary?.sets, dictName = loadedDictionary?.name) => {
         if (!sets || !dictName) return;
+        const wordsToLoad = [...sets[index].words];
+        const shuffledWords = wordsToLoad.sort(() => Math.random() - 0.5);
+
         setSelectedSetIndex(index);
         setCurrentWordIndex(0);
         setIsFlipped(false);
         setIsSetFinished(false);
         setIsTraining(false);
+        setSessionWords(shuffledWords);
         setUnknownWords(loadUnknownWords(sets, index, dictName));
     };
 
     const startTraining = () => {
       if (!loadedDictionary || !currentSet) return;
       const wordsToTrain = loadUnknownWords(loadedDictionary.sets, selectedSetIndex!, loadedDictionary.name);
+      const shuffledWords = [...wordsToTrain].sort(() => Math.random() - 0.5);
+      
       setUnknownWords(wordsToTrain);
+      setSessionWords(shuffledWords);
       setIsTraining(true);
       setCurrentWordIndex(0);
       setIsSetFinished(false);
@@ -381,14 +403,24 @@ const App: React.FC = () => {
                           />
   
                           <div className="w-full max-w-md mt-6">
-                              <ProgressBar current={currentWordIndex + 1} total={wordsForCurrentMode.length} />
+                              <ProgressBar current={currentWordIndex + 1} total={sessionWords.length} />
                               <div className="flex justify-between items-center text-sm text-slate-400">
-                                  <span>{currentWordIndex + 1} / {wordsForCurrentMode.length}</span>
-                                  {!isTraining && (
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => setShowWordList(!showWordList)} title="Toggle Word List" className="p-2 rounded-full hover:bg-slate-800 transition-colors"><ChevronsUpDown size={18} /></button>
-                                    </div>
-                                  )}
+                                  <span>{currentWordIndex + 1} / {sessionWords.length}</span>
+                                  <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={handleShuffle}
+                                        title="Shuffle Words"
+                                        className="p-2 rounded-full hover:bg-slate-800 transition-colors"
+                                        aria-label="Shuffle current set"
+                                      >
+                                        <Repeat size={18} />
+                                      </button>
+                                      {!isTraining && (
+                                        <button onClick={() => setShowWordList(!showWordList)} title="Toggle Word List" className="p-2 rounded-full hover:bg-slate-800 transition-colors">
+                                          <ChevronsUpDown size={18} />
+                                        </button>
+                                      )}
+                                  </div>
                               </div>
                           </div>
   
@@ -429,14 +461,28 @@ const App: React.FC = () => {
     };
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
+      <div className="min-h-screen flex flex-col p-4 sm:p-6 md:p-8">
         <FileSourceModal
             isOpen={isFileModalOpen}
             onClose={() => setIsFileModalOpen(false)}
             onFilesSelect={handleFilesSelect}
             isLoading={isLoading}
         />
-        {renderContent()}
+        <InstructionsModal
+            isOpen={isInstructionsModalOpen}
+            onClose={() => setIsInstructionsModalOpen(false)}
+        />
+        <main className="flex-grow flex flex-col items-center justify-center">
+          {renderContent()}
+        </main>
+        <footer className="w-full text-center py-2">
+            <button
+              onClick={() => setIsInstructionsModalOpen(true)}
+              className="text-sm text-slate-500 hover:text-indigo-400 transition-colors underline"
+            >
+              Інструкція з використання (українською)
+            </button>
+        </footer>
       </div>
     );
 };
