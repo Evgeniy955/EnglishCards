@@ -1,0 +1,5 @@
+{
+  "name": "Flashcard Word Trainer",
+  "description": "An application to learn English words using flashcards. Users can upload an Excel file with word pairs (Russian-English) to create custom learning sets, track unknown words, and practice them separately.",
+  "requestFramePermissions": []
+}
