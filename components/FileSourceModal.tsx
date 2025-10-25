@@ -26,7 +26,8 @@ export const FileSourceModal: React.FC<FileSourceModalProps> = ({ isOpen, onClos
     onFilesSelect(name, wordsFile, sentencesFile);
   };
 
-  const TabButton = ({ tab, children }: { tab: Tab, children: React.ReactNode }) => (
+  // FIX: Changed props type to React.PropsWithChildren to correctly handle the children prop and resolve TypeScript error.
+  const TabButton = ({ tab, children }: React.PropsWithChildren<{ tab: Tab }>) => (
     <button
       onClick={() => setActiveTab(tab)}
       className={`flex-1 flex items-center justify-center gap-2 p-3 text-sm font-medium border-b-2 transition-colors ${
