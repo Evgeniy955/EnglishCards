@@ -13,3 +13,8 @@ export interface LoadedDictionary {
   name: string;
   sets: WordSet[];
 }
+
+export interface WordProgress {
+  srsStage: number;
+  nextReviewDate: string; // ISO 8601 date string
+}
