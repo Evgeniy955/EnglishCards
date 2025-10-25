@@ -1,8 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { BookText, UploadCloud } from 'lucide-react';
-
-// This is required by the xlsx library
-declare var XLSX: any;
+import * as XLSX from 'xlsx';
 
 interface SentenceUploadProps {
   onSentencesLoaded: (map: Map<string, string>) => void;

@@ -1,4 +1,3 @@
-// Fix: Define and export the `Word` interface, and remove the incorrect circular import.
 export interface Word {
   ru: string;
   en: string;
@@ -7,5 +6,10 @@ export interface Word {
 export interface WordSet {
   name: string;
   words: Word[];
-  originalSetIndex: number;
+  originalSetIndex: number; // To keep colors consistent for related sets
+}
+
+export interface LoadedDictionary {
+  name: string;
+  sets: WordSet[];
 }

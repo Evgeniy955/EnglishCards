@@ -29,8 +29,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, isLoading 
 
   return (
     <div className="w-full max-w-lg mx-auto text-center">
-      <h2 className="text-3xl font-bold mb-2 text-slate-100">Welcome to Word Trainer</h2>
-      <p className="text-slate-400 mb-8">Upload your .xlsx file to begin.</p>
       <label
         htmlFor="file-upload"
         onDragOver={onDragOver}

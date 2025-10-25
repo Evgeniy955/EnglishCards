@@ -79,14 +79,14 @@ export const Flashcard: React.FC<FlashcardProps> = ({ word, isFlipped, onFlip, e
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash-preview-tts",
           contents: [{ parts: [{ text }] }],
-          // Fix: `speakingRate` is a property of `speechConfig`, not `voiceConfig`.
+          // Fix: The 'speakingRate' property is not supported in the SpeechConfig and was removed to fix a type error.
+          // The rate is adjusted in the native speech synthesis fallback.
           config: {
             responseModalities: [Modality.AUDIO],
             speechConfig: {
               voiceConfig: {
                 prebuiltVoiceConfig: { voiceName: 'Kore' },
               },
-              speakingRate: isSentence ? 0.9 : 1.0,
             }
           },
         });
