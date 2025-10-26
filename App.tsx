@@ -8,7 +8,7 @@ import { WordList } from './components/WordList';
 import { SentenceUpload } from './components/SentenceUpload';
 import { FileSourceModal } from './components/FileSourceModal';
 import { InstructionsModal } from './components/InstructionsModal';
-import { LearnedWordsModal } from './components/LearnedWordsModal.tsx';
+import { LearnedWordsModal } from './components/LearnedWordsModal';
 import type { Word, WordSet, LoadedDictionary, WordProgress } from './types';
 
 const MAX_WORDS_PER_BLOCK = 30;
@@ -70,6 +70,7 @@ const App: React.FC = () => {
     const [sessionWords, setSessionWords] = useState<Word[]>([]);
     const [history, setHistory] = useState<number[]>([]);
     const [srsProgress, setSrsProgress] = useState<Map<string, WordProgress>>(new Map());
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const currentSet = loadedDictionary && selectedSetIndex !== null ? loadedDictionary.sets[selectedSetIndex] : null;
     const currentWord = sessionWords[currentWordIndex];
@@ -259,7 +260,8 @@ const App: React.FC = () => {
 
     // --- User Actions ---
     const handlePrevious = () => {
-      if (history.length === 0) return;
+      if (history.length === 0 || isProcessing) return;
+      setIsProcessing(true);
       const newHistory = [...history];
       const previousIndex = newHistory.pop();
       if (previousIndex !== undefined) {
@@ -267,6 +269,7 @@ const App: React.FC = () => {
         setCurrentWordIndex(previousIndex);
         setIsFlipped(false);
       }
+      setIsProcessing(false);
     };
     
     const handleShuffle = () => {
@@ -280,7 +283,8 @@ const App: React.FC = () => {
     };
 
     const handleKnow = () => {
-        if (!currentWord || !loadedDictionary || !currentSet) return;
+        if (!currentWord || !loadedDictionary || !currentSet || isProcessing) return;
+        setIsProcessing(true);
 
         // --- Update SRS Progress ---
         const currentProgress = srsProgress.get(currentWord.en) || { srsStage: 0, nextReviewDate: new Date().toISOString() };
@@ -311,11 +315,13 @@ const App: React.FC = () => {
           } else {
               setCurrentWordIndex(prev => prev + 1);
           }
+          setIsProcessing(false);
         }, 250); // Delay to allow flip animation
     };
 
     const handleDontKnow = () => {
-      if (!currentWord || !loadedDictionary || !currentSet) return;
+      if (!currentWord || !loadedDictionary || !currentSet || isProcessing) return;
+      setIsProcessing(true);
 
        // --- Reset SRS Progress for this word ---
       const newProgressMap = new Map(srsProgress);
@@ -338,6 +344,7 @@ const App: React.FC = () => {
             });
         }
         setCurrentWordIndex(prev => prev + 1);
+        setIsProcessing(false);
       }, 250);
     };
 
@@ -630,21 +637,23 @@ const App: React.FC = () => {
                           <div className="flex items-center gap-4 mt-6 w-full max-w-md">
                              <button
                                 onClick={handlePrevious}
-                                disabled={history.length === 0}
-                                className="p-4 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={history.length === 0 || isProcessing}
+                                className="p-4 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-wait"
                                 aria-label="Previous card"
                               >
                                 <ArrowLeft size={24} />
                               </button>
                               <button
                                 onClick={handleDontKnow}
-                                className="flex-1 px-6 py-3 bg-rose-800 hover:bg-rose-700 rounded-lg font-semibold transition-colors text-center"
+                                disabled={isProcessing}
+                                className="flex-1 px-6 py-3 bg-rose-800 hover:bg-rose-700 rounded-lg font-semibold transition-colors text-center disabled:opacity-50 disabled:cursor-wait"
                               >
                                 Don't know
                               </button>
                               <button
                                 onClick={handleKnow}
-                                className="flex-1 px-6 py-3 bg-emerald-800 hover:bg-emerald-700 rounded-lg font-semibold transition-colors text-center"
+                                disabled={isProcessing}
+                                className="flex-1 px-6 py-3 bg-emerald-800 hover:bg-emerald-700 rounded-lg font-semibold transition-colors text-center disabled:opacity-50 disabled:cursor-wait"
                               >
                                 Know
                               </button>
