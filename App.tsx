@@ -8,7 +8,7 @@ import { WordList } from './components/WordList';
 import { SentenceUpload } from './components/SentenceUpload';
 import { FileSourceModal } from './components/FileSourceModal';
 import { InstructionsModal } from './components/InstructionsModal';
-import { LearnedWordsModal } from './components/LearnedWordsModal';
+import { LearnedWordsModal } from './components/LearnedWordsModal.tsx';
 import type { Word, WordSet, LoadedDictionary, WordProgress } from './types';
 
 const MAX_WORDS_PER_BLOCK = 30;
